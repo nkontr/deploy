@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { shortOrgName } from '../utils/shortOrgName'
 import { useQuery } from '@tanstack/react-query'
 import { getCompanies } from '../api/endpoints'
 import { filterToQuery } from '../filters/filterToQuery'
@@ -246,7 +247,9 @@ function CompanyRow({ company, isSelected, onClick, searchQuery, sortField }: Co
       <div className={styles.rowHeader}>
         <div className={styles.rowTitleLine}>
           <Badge variant={kindColor}>{getKindLabel(company.kind)}</Badge>
-          <div className={styles.rowTitle}>{highlightText(company.name, searchQuery)}</div>
+          <div className={styles.rowTitle} title={company.name}>
+            {highlightText(shortOrgName(company.name), searchQuery)}
+          </div>
         </div>
         <div className={styles.badges}>
           {company.isEstimated && <Badge variant="default">оценка</Badge>}

@@ -118,7 +118,8 @@
   }
 
   .subscriptionsLinkDesktop {
-    display: block;
+    display: inline-flex;     /* block растягивался по высоте шапки, а текст прилипал к верху плашки */
+    align-items: center;
   }
 
   .profileMenuMobile {

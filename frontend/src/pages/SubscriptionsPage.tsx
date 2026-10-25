@@ -175,7 +175,7 @@ function SubscriptionList({ onDone }: { onDone: ToastFn }) {
       {error && <p className={styles.error}>{apiMessage(error)}</p>}
       {data && data.length === 0 && (
         <p className={styles.hint}>
-          Подписок пока нет. Выберите условия слева или нажмите «Подписаться на такие проекты» в карточке проекта.
+          Подписок пока нет. Выберите условия в форме «Новая подписка» или нажмите «Подписаться на такие проекты» в карточке проекта.
         </p>
       )}
 

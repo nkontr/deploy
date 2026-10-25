@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { shortOrgName } from '../utils/shortOrgName'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createSubscription, getProject, getProjectRelatedCompanies } from '../api/endpoints'
@@ -206,7 +207,9 @@ function RelatedCompanyRow({
       <span className={`${styles.kindDot} ${styles[`kind-${company.kind}`]}`} aria-hidden="true" />
       <span className={styles.companyMain}>
         {company.relation === 'initiator' && <Badge variant="purple">Инициатор проекта</Badge>}
-        <span className={styles.companyName}>{company.name}</span>
+        <span className={styles.companyName} title={company.name}>
+          {shortOrgName(company.name)}
+        </span>
         <span className={styles.companyMeta}>
           {company.revenueEst !== null ? formatMoney(company.revenueEst / 1_000_000) : 'выручка —'}
           {company.revenueEst !== null && (
