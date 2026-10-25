@@ -52,7 +52,7 @@ namespace ExportService.Services
         {
             var columns = bitrix
                 ? new[] { "Название лида", "Название компании", "Рабочий телефон", "Рабочий e-mail", "Адрес", "Источник", "Комментарий" }
-                : new[] { "ИНН", "Наименование", "Отрасль", "ОКВЭД", "Муниципалитет", "Населённый пункт", "Категория", "Численность",
+                : new[] { "ИНН", "Наименование", "Отрасль", "ОКВЭД", "Муниципалитет", "Населённый пункт", "Юридический адрес (ЕГРЮЛ)", "Категория", "Численность",
                           "Выручка, руб. (оценка)", "Рост выручки, % (оценка)", "Клиент РТ", "Дата исключения из реестра",
                           "Источник выручки", "Новая компания", "Дата регистрации", "Телефон", "E-mail" };
             foreach (var column in columns)
@@ -69,6 +69,7 @@ namespace ExportService.Services
             csv.WriteField($"{c.OkvedCode} {c.OkvedName}".Trim());
             csv.WriteField(c.MunicipalityName ?? "");
             csv.WriteField(c.Settlement ?? "");
+            csv.WriteField(c.Address ?? "");
             csv.WriteField(Size(c.SizeCategory));
             csv.WriteField(c.Employees?.ToString(Ru) ?? "");
             csv.WriteField(c.RevenueEst?.ToString("0", Ru) ?? "");              // рубли, целое: 18500000
@@ -94,7 +95,9 @@ namespace ExportService.Services
             csv.WriteField(c.Name ?? "");
             csv.WriteField(c.Phone ?? "");
             csv.WriteField(c.Email ?? "");
-            csv.WriteField(string.IsNullOrEmpty(c.Settlement) ? c.MunicipalityName ?? "" : $"{c.MunicipalityName}, {c.Settlement}");
+            // Адрес лида: юридический из ЕГРЮЛ, если найден, иначе район и населённый пункт
+            csv.WriteField(!string.IsNullOrEmpty(c.Address) ? c.Address
+                : string.IsNullOrEmpty(c.Settlement) ? c.MunicipalityName ?? "" : $"{c.MunicipalityName}, {c.Settlement}");
             csv.WriteField("Радар присутствия");
             var status = c.Kind switch
             {

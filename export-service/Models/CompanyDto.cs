@@ -25,6 +25,10 @@ namespace ExportService.Models
         [JsonPropertyName("settlement")]
         public string? Settlement { get; set; }
 
+        /// <summary>Юридический адрес из ЕГРЮЛ (у юрлиц, если найден), иначе null.</summary>
+        [JsonPropertyName("address")]
+        public string? Address { get; set; }
+
         [JsonPropertyName("sizeCategory")]
         public string? SizeCategory { get; set; }
 

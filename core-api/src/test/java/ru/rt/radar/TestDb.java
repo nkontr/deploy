@@ -100,6 +100,9 @@ public final class TestDb {
                 ('6100000007', 'ООО "ЭТА"',         'legal', 'trade',     '47.11', 1, 47.24, 39.74, 'micro',  2,    NULL,         20000000,  0.0,  'model', true,  false, false, 'excluded'),
                 ('6100000008', 'ООО "ТЕТА"',        'legal', 'trade',     '47.19', 1, 47.25, 39.75, 'micro',  NULL, '2021-05-20', 10000000,  3.0,  'model', true,  false, false, 'active')
                 """);
+        // У всех компаний стандартного набора — адрес из ЕГРЮЛ: на карте они точками.
+        // Группы «без адреса» проверяет MapApiTest.groupsForCompaniesWithoutAddress
+        j.update("UPDATE company SET geo_precision = 'address'");
         // Компания 1 — полностью заполненная карточка (для сверки с contracts/examples/company.json)
         j.update("""
                 UPDATE company SET ogrn = '1196196012345', okved_name = 'Торговля розничная', phone = '+78632000001',
@@ -146,12 +149,13 @@ public final class TestDb {
     public static void insertBulk(int n, boolean mixed) {
         jdbc().update("""
                 INSERT INTO company (inn, name, subject_type, industry, municipality_id, lat, lon, size_category,
-                                     revenue_est, is_client, status)
+                                     revenue_est, is_client, status, geo_precision)
                 SELECT 'B' || lpad(g::text, 11, '0'), 'Синтетика ' || g, 'legal', 'services', 1 + g % 2,
                        47.0 + (g % 100) * 0.005, 39.0 + (g / 100 % 100) * 0.01, 'micro',
                        (g % 100) * 1000000,
                        ? AND g % 10 = 0,
-                       CASE WHEN ? AND g % 50 = 0 THEN 'excluded' ELSE 'active' END
+                       CASE WHEN ? AND g % 50 = 0 THEN 'excluded' ELSE 'active' END,
+                       'address'
                 FROM generate_series((SELECT count(*) FROM company WHERE inn LIKE 'B%') + 1,
                                      (SELECT count(*) FROM company WHERE inn LIKE 'B%') + ?) g
                 """, mixed, mixed, n);

@@ -1,13 +1,15 @@
 {
   "mode": "points",
-  "total": 7,
+  "total": 61,
   "points": [
     { "id": 318, "lat": 47.11214, "lon": 39.42018, "kind": "others" },
     { "id": 3012, "lat": 47.10872, "lon": 39.41655, "kind": "ours" },
-    { "id": 3013, "lat": 47.10935, "lon": 39.42571, "kind": "others" },
-    { "id": 3014, "lat": 47.11502, "lon": 39.41234, "kind": "others" },
-    { "id": 3015, "lat": 47.10611, "lon": 39.4289, "kind": "excluded" },
-    { "id": 3016, "lat": 47.11777, "lon": 39.43102, "kind": "ours" },
-    { "id": 3017, "lat": 47.10398, "lon": 39.41987, "kind": "others" }
+    { "id": 3015, "lat": 47.10611, "lon": 39.4289, "kind": "excluded" }
+  ],
+  "groups": [
+    { "label": "г. Азов", "municipalityId": 3, "settlement": null, "lat": 47.1078, "lon": 39.4237,
+      "total": 52, "ours": 1, "others": 51, "excluded": 0 },
+    { "label": "х. Победа", "municipalityId": 7, "settlement": "х. Победа", "lat": 46.93992, "lon": 39.63469,
+      "total": 6, "ours": 0, "others": 6, "excluded": 0 }
   ]
 }

@@ -20,6 +20,8 @@ public class MapController {
 
     /** Не больше стольких компаний — отдаём точками, иначе кластерами. */
     static final int POINTS_LIMIT = 1500;
+    /** С этого зума (улицы) — точки с адресом и группы без адреса, даже если компаний в окне больше порога */
+    static final int STREET_ZOOM = 13;
     static final int MIN_ZOOM = 3;
     static final int MAX_ZOOM = 18;
 
@@ -31,7 +33,8 @@ public class MapController {
 
     @GetMapping("/api/map/cells")
     @Operation(summary = "Карта «как выбор ПВЗ»: точки или кластеры",
-            description = "total ≤ " + POINTS_LIMIT + " → mode=points (каждая компания), иначе mode=cells — кластеры "
+            description = "total ≤ " + POINTS_LIMIT + " (или zoom ≥ " + STREET_ZOOM + " и компаний с адресом ≤ " + POINTS_LIMIT
+                    + ") → mode=points (компании с адресом — точками, без адреса — группами по населённому пункту), иначе mode=cells — кластеры "
                     + "по сетке cellDeg = 84 / 2^zoom с центром в среднем координат компаний. Без границ окна — вся область. "
                     + "total совпадает с /api/companies при том же фильтре.",
             responses = @ApiResponse(responseCode = "200", content = @Content(
@@ -49,8 +52,10 @@ public class MapController {
         double cellDeg = cellDeg(zoom);
         List<CellsResponse.Cell> cells = map.cells(filter, cellDeg);
         long total = cells.stream().mapToLong(CellsResponse.Cell::total).sum();
-        if (total <= POINTS_LIMIT) {
-            return new PointsResponse(total, map.points(filter));
+        // С масштаба улиц компании без адреса стоят одной группой на нас. пункт: в Ростове их десятки тысяч в одной
+        // точке, порог по total никогда бы не прошёл. Считаем по точкам с адресом — их рисуем по одной.
+        if (total <= POINTS_LIMIT || zoom >= STREET_ZOOM && map.countWithAddress(filter) <= POINTS_LIMIT) {
+            return new PointsResponse(total, map.points(filter), map.groups(filter));
         }
         return new CellsResponse(cellDeg, total, cells);
     }

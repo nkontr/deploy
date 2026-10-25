@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 /**
  * Полная карточка компании (GET /api/companies/{id}, /internal/companies) = CompanyShort + контакты и признаки.
+ * address — юридический адрес из ЕГРЮЛ (у юрлиц, если найден), иначе null.
  * Порядок полей = порядок в JSON (contracts/examples/company.json). Неизвестное — null, поле не пропускается.
  */
 public record Company(
@@ -21,6 +22,7 @@ public record Company(
         double lat,
         double lon,
         String geoPrecision,
+        String address,
         String sizeCategory,
         Integer employees,
         Long revenueEst,

@@ -63,8 +63,43 @@ class MapApiTest extends DbWebTest {
                 .andExpect(jsonPath("$.points.length()").value(0));
     }
 
+    /** Компании без адреса: не точками на условном здании, а группой на населённый пункт (или район). */
+    @Test
+    void groupsForCompaniesWithoutAddress() throws Exception {
+        // 2 и 8 — в х. Победа района 1, 3 — без населённого пункта (только район 1); 1, 5, 6 — с адресом
+        TestDb.jdbc().update("UPDATE company SET geo_precision = 'settlement', settlement = 'х. Победа' WHERE id IN (2, 8)");
+        TestDb.jdbc().update("UPDATE company SET geo_precision = 'municipality' WHERE id = 3");
+        mvc.perform(get("/api/map/cells?zoom=7"))
+                .andExpect(jsonPath("$.mode").value("points"))
+                .andExpect(jsonPath("$.total").value(6))                       // как у /api/companies: точки + группы
+                .andExpect(jsonPath("$.points[*].id", contains(1, 5, 6)))
+                .andExpect(jsonPath("$.groups[*].label", contains("х. Победа", "г. Тестоград")))
+                .andExpect(jsonPath("$.groups[0].settlement").value("х. Победа"))
+                .andExpect(jsonPath("$.groups[0].total").value(2))
+                .andExpect(jsonPath("$.groups[0].others").value(2))
+                .andExpect(jsonPath("$.groups[0].lat").value(47.235))              // среднее условных точек 2 и 8
+                .andExpect(jsonPath("$.groups[1].settlement").doesNotExist())
+                .andExpect(jsonPath("$.groups[1].municipalityId").value(1));
+    }
+
+    /** На масштабе улиц порог считается по точкам с адресом: тысячи компаний без адреса — одна группа. */
+    @Test
+    void streetZoomGroupsManyCompaniesWithoutAddress() throws Exception {
+        TestDb.insertBulk(MapController.POINTS_LIMIT + 10, false);
+        TestDb.jdbc().update("UPDATE company SET geo_precision = 'municipality', municipality_id = 1, lat = 47.2, lon = 39.7 WHERE inn LIKE 'B%'");
+        String q = "/api/map/cells?minLat=47.1&maxLat=47.3&minLon=39.6&maxLon=39.8&zoom=";
+        assertThat(json(q + (MapController.STREET_ZOOM - 1)).get("mode").asText()).isEqualTo("cells");
+        JsonNode street = json(q + MapController.STREET_ZOOM);
+        assertThat(street.get("mode").asText()).isEqualTo("points");
+        assertThat(street.get("groups").size()).isEqualTo(1);              // все синтетические — в центре города 1
+        assertThat(street.get("groups").get(0).get("total").asLong()).isGreaterThan(MapController.POINTS_LIMIT);
+        assertThat(street.get("total").asLong())
+                .isEqualTo(street.get("points").size() + street.get("groups").get(0).get("total").asLong());
+    }
+
     @Test
     void pointsMatchContractExample() throws Exception {
+        TestDb.jdbc().update("UPDATE company SET geo_precision = 'settlement', settlement = 'х. Победа' WHERE id = 2");
         String body = mvc.perform(get("/api/map/cells?zoom=13&status=all"))
                 .andReturn().getResponse().getContentAsString();
         ContractShape.assertMatches("points.json", body);
