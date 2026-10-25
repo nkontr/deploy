@@ -52,6 +52,9 @@ services:
       PORT: "8084"
       DATABASE_URL: postgresql://etl_loader:${ETL_DB_PASSWORD:-etl_dev}@postgres:5432/radar
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-internal_dev_token}
+      # Адреса юрлиц из ЕГРЮЛ (dadata.ru, бесплатно 10 000 запросов в сутки); пусто — точки остаются условными
+      DADATA_API_KEY: ${DADATA_API_KEY:-}
+      DADATA_DAILY_LIMIT: ${DADATA_DAILY_LIMIT:-9000}
       AUTO_LOAD: if-empty
     depends_on:
       postgres:

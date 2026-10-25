@@ -15,6 +15,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from . import addresses
 from . import geo
 from . import model
 from . import prices
@@ -85,7 +86,7 @@ def make_company(ctx, rec, is_client, status, excluded_at):
         return None
     mid, kind, lat0, lon0 = ctx.muni[place[0]]
     settlement = nz.settlement_of(rec.get("district"), rec.get("city"), rec.get("settlement"), place)
-    lat, lon, precision = geo.place(inn, ctx.buildings, place[0], kind, (lat0, lon0), settlement,
+    lat, lon, precision = geo.place(ctx.buildings, place[0], (lat0, lon0), settlement,
                                     ctx.settlements.get(f"{place[0]}|{settlement}") if settlement else None)
     ctx.geo[precision] += 1
 
@@ -330,9 +331,12 @@ def do_load(conn, run_id):
         if row:
             out.append(row)
     copy_companies(cur, out)
+    # Адреса из ЕГРЮЛ (кэш etl.egrul_address): точка на адресе вместо условной на здании нас. пункта
+    addresses.apply(cur)
+    geo_counts = dict(cur.execute("SELECT geo_precision, count(*) FROM core.company GROUP BY 1").fetchall())
     for k, v in ctx.skipped.items():
         log.warning("WARN: %s: %d строк", k, v)
-    log.info("координаты: %s", dict(ctx.geo))
+    log.info("координаты: %s", geo_counts)
 
     # продукт 2
     invest_n = load_invest(cur, invest_rows, muni, muni_of_raw) if invest_rows else 0
@@ -349,7 +353,7 @@ def do_load(conn, run_id):
         "FROM core.company").fetchone()
     details = {"companies": total, "clients_active": act, "clients_excluded": exc, "others": others,
                "municipalities": len(muni), "white_spots": white, "invest_projects": invest_n,
-               "skipped": dict(ctx.skipped), "geo_precision": dict(ctx.geo), "seconds": round(time.time() - t0, 1)}
+               "skipped": dict(ctx.skipped), "geo_precision": geo_counts, "seconds": round(time.time() - t0, 1)}
     # clock_timestamp(), а не now(): now() внутри транзакции — время её начала, длительность выходила ~0 с
     cur.execute("UPDATE etl.load_run SET status='ok', finished_at=clock_timestamp(), details=%s WHERE id=%s",
                 (Jsonb(details), run_id))
@@ -402,21 +406,28 @@ def cmd_prices(url):
     return 0 if status == "ok" else 1
 
 
+def cmd_addresses(url):
+    """Юридические адреса юрлиц из ЕГРЮЛ (DaData) в пределах суточного лимита (etl/addresses.py)."""
+    with connect(url) as conn:
+        return addresses.run(conn)
+
+
 def cmd_serve(url):
     from .server import serve
-    return serve(url, connect, cmd_load, add_demo_project, cmd_prices)
+    return serve(url, connect, cmd_load, add_demo_project, cmd_prices, cmd_addresses)
 
 
 def main(argv=None):
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(prog="python -m etl")
-    ap.add_argument("command", choices=["load", "demo-project", "prices", "serve"])
+    ap.add_argument("command", choices=["load", "demo-project", "prices", "addresses", "serve"])
     args = ap.parse_args(argv)
     url = os.environ.get("DATABASE_URL")
     if not url:
         ap.error("не задан DATABASE_URL")
-    return {"load": cmd_load, "demo-project": cmd_demo_project, "prices": cmd_prices,
-            "serve": cmd_serve}[args.command](url)
+    res = {"load": cmd_load, "demo-project": cmd_demo_project, "prices": cmd_prices,
+           "addresses": cmd_addresses, "serve": cmd_serve}[args.command](url)
+    return 0 if isinstance(res, dict) else res
 
 
 if __name__ == "__main__":

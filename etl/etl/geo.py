@@ -1,20 +1,17 @@
-"""Размещение компании на карте. Адресов в реестре нет, поэтому точка — реальное здание из OSM.
+"""Где стоит компания без адреса (адреса в реестре МСП нет; юрлица с адресом из ЕГРЮЛ — addresses.py).
 
-Порядок: здание в населённом пункте (settlements.json) -> здание в районе / городском округе (граница из OSM)
--> старый вариант, случайная точка у центроида. Здание выбирается по хэшу ИНН — при перезагрузке точка та же;
-чем плотнее застройка, тем больше там компаний, как и в жизни.
+Центр населённого пункта (settlements.json), если центр подтверждается застройкой района из OSM
+(buildings.csv.gz), иначе центр района / городского округа. Здания нужны только для этой проверки.
 """
 import csv
 import gzip
 import math
 
-from . import model
 
 CELL = 0.02                 # ячейка сетки, градусы (~2 км)
 KM_PER_DEG = 111.32
 TOWN_RADIUS_KM = 4.0        # город внутри района (Аксай, Сальск)
 VILLAGE_RADIUS_KM = 2.0     # посёлок, хутор, станица
-SPREAD = 0.00007            # до ~8 м от центра здания, чтобы компании одного дома не слипались в одну точку
 
 
 class Buildings:
@@ -30,9 +27,6 @@ class Buildings:
 
     def __len__(self):
         return sum(map(len, self.by_muni.values()))
-
-    def in_muni(self, muni):
-        return self.by_muni.get(muni, [])
 
     def near(self, muni, lat, lon, radius_km):
         key = (muni, lat, lon, radius_km)
@@ -57,26 +51,16 @@ def _cell(lat, lon):
     return int(math.floor(lat / CELL)), int(math.floor(lon / CELL))
 
 
-def _pick(inn, candidates):
-    lat, lon = candidates[int(model.u(inn, "b") * len(candidates)) % len(candidates)]
-    dlat = (model.u(inn, "dy") * 2 - 1) * SPREAD
-    dlon = (model.u(inn, "dx") * 2 - 1) * SPREAD / math.cos(math.radians(lat))
-    return round(lat + dlat, 6), round(lon + dlon, 6)
+def place(buildings, muni, center, settlement=None, settlement_center=None):
+    """-> (lat, lon, geo_precision) для компании без адреса: центр населённого пункта или района.
 
-
-def place(inn, buildings, muni, kind, center, settlement=None, settlement_center=None):
-    """-> (lat, lon, geo_precision). muni/kind/center — муниципалитет; settlement_center — центроид нас. пункта."""
+    Не случайное здание: точка на доме выглядит как настоящий адрес, а кластеры по таким точкам выдумывают,
+    где внутри города компаний больше. Центр пункта честно говорит «где-то в х. Победа»: на уровне улиц
+    карта рисует таких одним значком группы, точками — только компании с адресом из ЕГРЮЛ (addresses.py).
+    """
     if settlement_center:
         radius = TOWN_RADIUS_KM if settlement.startswith("г.") else VILLAGE_RADIUS_KM
-        cand = buildings.near(muni, settlement_center[0], settlement_center[1], radius)
-        if cand:
-            return (*_pick(inn, cand), "settlement")
-        # геокодер мог найти одноимённый хутор в другом районе — тогда зданий рядом нет, нас. пункту не верим
-    cand = buildings.in_muni(muni)
-    if cand:
-        return (*_pick(inn, cand), "municipality")
-    if settlement_center:                   # зданий района в файле нет вовсе — хотя бы около нас. пункта
-        lat, lon = model.jitter_point(inn, settlement_center[0], settlement_center[1], 0.01)
-        return lat, lon, "settlement"
-    lat, lon = model.jitter_point(inn, center[0], center[1], 0.03 if kind == "city" else 0.08)
-    return lat, lon, "approx"
+        # геокодер мог найти одноимённый хутор в другом районе — тогда застройки района рядом нет, пункту не верим
+        if not len(buildings) or buildings.near(muni, settlement_center[0], settlement_center[1], radius):
+            return round(settlement_center[0], 6), round(settlement_center[1], 6), "settlement"
+    return round(center[0], 6), round(center[1], 6), "municipality"
