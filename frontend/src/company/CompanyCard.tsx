@@ -6,11 +6,12 @@ import styles from './CompanyCard.module.css'
 import { useState } from 'react'
 import type { GeoPrecision } from '../api/types'
 
-// Адреса в реестре МСП нет — честно говорим, насколько точна точка на карте
+// Адреса в реестре МСП нет: точка — только у юрлиц с адресом из ЕГРЮЛ, остальные на карте группой нас. пункта
 const GEO_PRECISION_HINT: Record<GeoPrecision, string> = {
-  settlement: 'Точка на карте условная: здание в этом населённом пункте, адреса в реестре нет',
-  municipality: 'Точка на карте условная: здание в пределах района, адреса в реестре нет',
-  approx: 'Точка на карте приблизительная: около центра района',
+  address: 'Точка на карте — юридический адрес из ЕГРЮЛ',
+  settlement: 'Точного адреса нет — на карте в группе этого населённого пункта',
+  municipality: 'Точного адреса нет — на карте в группе района',
+  approx: 'Точного адреса нет — на карте в группе района',
 }
 
 interface CompanyCardProps {
@@ -134,6 +135,11 @@ export function CompanyCard({ companyId, onClose }: CompanyCardProps) {
               {company.municipalityName}
               {company.settlement && `, ${company.settlement}`}
             </span>
+            {company.address ? (
+              <span className={styles.fieldValue}>{company.address}</span>
+            ) : (
+              company.subjectType === 'legal' && <span className={styles.hint}>Юридический адрес пока не загружен из ЕГРЮЛ</span>
+            )}
             <span className={styles.hint}>{GEO_PRECISION_HINT[company.geoPrecision]}</span>
           </div>
           <div className={styles.field}>

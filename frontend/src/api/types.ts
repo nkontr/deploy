@@ -91,10 +91,24 @@ export interface MapCellsResponse {
   cells: MapCell[]
 }
 
+/** Компании без адреса в одном населённом пункте (или районе) — одним значком, а не точками на условных зданиях */
+export interface MapGroup {
+  label: string // «х. Победа» или «Аксайский р-н»
+  municipalityId: number
+  settlement: string | null
+  lat: number
+  lon: number
+  total: number
+  ours: number
+  others: number
+  excluded: number
+}
+
 export interface MapPointsResponse {
   mode: 'points'
   total: number
-  points: MapPoint[]
+  points: MapPoint[] // только компании с адресом из ЕГРЮЛ
+  groups?: MapGroup[] // остальные; старый core-api поля не отдаёт
 }
 
 export type MapDataResponse = MapCellsResponse | MapPointsResponse
@@ -104,7 +118,7 @@ export type CompanyKind = 'ours' | 'others' | 'excluded'
 export type CompanyStatus = 'active' | 'excluded'
 export type SubjectType = 'ip' | 'legal'
 export type SizeCategoryCode = 'micro' | 'small' | 'medium'
-export type GeoPrecision = 'settlement' | 'municipality' | 'approx'
+export type GeoPrecision = 'address' | 'settlement' | 'municipality' | 'approx'
 export type RevenueSource = 'fns' | 'model'
 
 export interface CompanyShort {
@@ -146,6 +160,7 @@ export interface Company extends CompanyShort {
   hasLicenses: boolean
   isInnovative: boolean
   isSocial: boolean
+  address?: string | null // юридический адрес из ЕГРЮЛ (у юрлиц, если найден)
 }
 
 export interface CompaniesResponse {

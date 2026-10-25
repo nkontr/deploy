@@ -43,6 +43,10 @@ export function MapLegend({ heat = false }: MapLegendProps) {
             <div className={styles.dot} style={{ backgroundColor: 'var(--rt-gray)' }} />
             <span>Исключены из реестра МСП</span>
           </div>
+          <div className={styles.item}>
+            <div className={styles.groupIcon}>N</div>
+            <span>Без точного адреса — по населённому пункту</span>
+          </div>
         </div>
       </div>
 

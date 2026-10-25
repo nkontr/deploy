@@ -44,6 +44,20 @@
   flex-shrink: 0;
 }
 
+/* Группа компаний без адреса — как значок на карте (groupMarker.ts) */
+.groupIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--rt-orange);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 13px;
+  text-align: center;
+  color: var(--rt-black);
+  flex-shrink: 0;
+}
+
 /* Шкала тепловой карты: те же цвета, что circle-color в heatmap.ts (мало наших -> много) */
 .heat {
   margin-bottom: var(--spacing-sm);

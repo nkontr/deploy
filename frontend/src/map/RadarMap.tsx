@@ -7,6 +7,8 @@ import type { MapDataResponse, MunicipalityStats, WhiteSpot } from '../api/types
 import { filterToQuery } from '../filters/filterToQuery'
 import type { CompanyFilters } from '../filters/types'
 import { createClusterMarker } from './clusterMarker'
+import { createGroupMarker, groupTooltip, offscreenMunicipality } from './groupMarker'
+import { getDictionaries } from '../api/endpoints'
 import { attachBasemapFallback, createBaseStyle } from './basemap'
 import { potentialTooltip } from './potentialTooltip'
 import { HEAT_MAX_ZOOM, cellsToHeatGeoJson, heatGridZoom, heatLayout, heatPaint } from './heatmap'
@@ -57,6 +59,8 @@ function relocationGeoJson(line: RelocationLine | null | undefined) {
 
 const ROSTOV_CENTER: [number, number] = [40.8, 47.6] // [lon, lat] для MapLibre
 const INITIAL_ZOOM = 7
+/** Как MapController.STREET_ZOOM в core-api: с него компании без адреса — группами, а не кластерами */
+const STREET_ZOOM = 13
 
 export function RadarMap({
   filters,
@@ -73,6 +77,8 @@ export function RadarMap({
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
   const [zoom, setZoom] = useState(INITIAL_ZOOM)
+  const [center, setCenter] = useState({ lat: ROSTOV_CENTER[1], lon: ROSTOV_CENTER[0] })
+  const { data: dict } = useQuery({ queryKey: ['dictionaries'], queryFn: getDictionaries, staleTime: Infinity })
   const markersRef = useRef<maplibregl.Marker[]>([])
   const whiteSpotLabelsRef = useRef<maplibregl.Marker[]>([])
   const boundsTimeoutRef = useRef<NodeJS.Timeout>()
@@ -141,6 +147,8 @@ export function RadarMap({
     // Обновляем bounds после moveend с дебаунсом (ТОЛЬКО запись в URL)
     // Только если bbox реально изменился И карта видима
     mapInstance.on('moveend', () => {
+      const c = mapInstance.getCenter()
+      setCenter({ lat: c.lat, lon: c.lng })
       if (boundsTimeoutRef.current) {
         clearTimeout(boundsTimeoutRef.current)
       }
@@ -323,6 +331,16 @@ export function RadarMap({
           .setLngLat([point.lon, point.lat]) // [lon, lat]
           .addTo(map.current!)
 
+        markersRef.current.push(marker)
+      })
+
+      // Компании без адреса — значком на населённый пункт, а не точками на условных зданиях
+      data.groups?.forEach((group) => {
+        const el = createGroupMarker(group)
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([group.lon, group.lat]) // [lon, lat]
+          .setPopup(new maplibregl.Popup({ closeButton: false, offset: 16 }).setText(groupTooltip(group)))
+          .addTo(map.current!)
         markersRef.current.push(marker)
       })
     }
@@ -705,9 +723,29 @@ export function RadarMap({
     }
   }, [relocation])
 
+  // Окраина города на масштабе улиц: значок «без адреса» стоит в центре — подсказываем, где он
+  const offscreen =
+    data?.mode === 'points' && Math.round(zoom) >= STREET_ZOOM && dict
+      ? offscreenMunicipality(center, dict.municipalities, data.groups ?? [])
+      : null
+
   return (
     <div className={styles.container}>
       <div ref={mapContainer} className={styles.map} />
+      {offscreen && (
+        <div className={styles.offscreenHint} role="status">
+          <span>
+            Компании «{offscreen.name}» без точного адреса показаны одним значком в центре — в реестре только город
+            или район.
+          </span>
+          <button
+            type="button"
+            onClick={() => map.current?.flyTo({ center: [offscreen.lon, offscreen.lat], zoom: STREET_ZOOM })}
+          >
+            Показать
+          </button>
+        </div>
+      )}
       {isLoading && (
         <div className={styles.loader}>
           <div className={styles.spinner} />

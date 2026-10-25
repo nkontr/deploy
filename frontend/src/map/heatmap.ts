@@ -30,7 +30,10 @@ export function cellsToHeatGeoJson(data: MapDataResponse | undefined) {
   const cells =
     data?.mode === 'cells'
       ? data.cells.map((c) => ({ lat: c.lat, lon: c.lon, total: c.total, ours: c.ours }))
-      : (data?.points ?? []).map((p) => ({ lat: p.lat, lon: p.lon, total: 1, ours: p.kind === 'ours' ? 1 : 0 }))
+      : [
+          ...(data?.points ?? []).map((p) => ({ lat: p.lat, lon: p.lon, total: 1, ours: p.kind === 'ours' ? 1 : 0 })),
+          ...(data?.groups ?? []).map((g) => ({ lat: g.lat, lon: g.lon, total: g.total, ours: g.ours })),
+        ]
   const max = Math.max(1, ...cells.map((c) => c.total))
   return {
     type: 'FeatureCollection' as const,
