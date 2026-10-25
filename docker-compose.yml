@@ -185,6 +185,10 @@ services:
       INTERNAL_TOKEN: ${INTERNAL_TOKEN:-internal_dev_token}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       CHECK_INTERVAL: 60s
+    # На демо-сервере до api.telegram.org доходит только IPv6 и этот IPv4 (149.154.166.110 режется),
+    # а у контейнеров только IPv4 — без этого бот висит на «Connect timed out»
+    extra_hosts:
+      - "api.telegram.org:149.154.167.220"
     depends_on:
       postgres:
         condition: service_healthy
