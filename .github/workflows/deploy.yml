@@ -1,0 +1,41 @@
+# Деплой на демо-сервер: пуш в before-main репозитория nkontr/deploy -> сервер обновляется сам.
+# Ключ DEPLOY_SSH_KEY на сервере может выполнить только /root/ci-deploy.sh (command= в authorized_keys):
+# git pull before-main + infra/deploy/build.sh. Инструкция — infra/deploy/README.md.
+name: deploy
+
+on:
+  push:
+    branches: [before-main]
+  workflow_dispatch:          # кнопка «Run workflow» — передеплоить без нового коммита
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false   # второй пуш ждёт окончания первого деплоя, а не рвёт сборку
+
+jobs:
+  deploy:
+    # В командном репозитории (и форках) секретов нет — там workflow не запускается
+    if: github.repository == 'nkontr/deploy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: SSH-ключ и отпечаток сервера
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Обновить и пересобрать на сервере
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          # Команду выбирает сервер (command= в authorized_keys); ServerAlive — сборка идёт минутами без вывода
+          ssh -i ~/.ssh/deploy -o BatchMode=yes -o ServerAliveInterval=30 "root@$HOST" deploy
+
+      - name: Сайт отвечает снаружи
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: curl -fsS -o /dev/null -w "HTTP %{http_code}\n" --retry 5 --retry-delay 5 "http://$HOST/"
