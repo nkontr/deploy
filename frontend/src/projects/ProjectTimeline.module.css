@@ -172,7 +172,7 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Mobile: горизонтальная прокрутка */
+/* Телефон: таймлайн — своя вкладка на весь экран, годы переносятся строками (вбок никто не листает) */
 @media (max-width: 767px) {
   .container {
     padding: 12px;
@@ -185,6 +185,9 @@
 
   .timeline {
     gap: 2px;
+    row-gap: 12px;
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
 
   .yearColumn {

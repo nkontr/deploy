@@ -8,57 +8,47 @@ interface WhiteSpotsListProps {
   onSelectSpot: (lat: number, lon: number) => void
 }
 
+/** Десктоп — список сразу раскрыт; планшет и телефон — свёрнут в плашку, чтобы не закрывать карту */
+const isDesktop = () => typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1280px)').matches
+
 export function WhiteSpotsList({ spots, onSelectSpot }: WhiteSpotsListProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(isDesktop)
 
   if (spots.length === 0) {
     return null
   }
 
   return (
-    <>
-      {/* Десктоп - всегда развёрнуто */}
-      <div className={styles.containerDesktop}>
-        <h3 className={styles.title}>Топ белых пятен</h3>
+    <div className={`${styles.container} ${expanded ? styles.expanded : ''}`}>
+      <button
+        type="button"
+        className={styles.header}
+        aria-expanded={expanded}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <span>Белые пятна · {spots.length}</span>
+        <span className={styles.chevron} aria-hidden="true">
+          {expanded ? '▾' : '▴'}
+        </span>
+      </button>
+      {expanded && (
         <div className={styles.list}>
           {spots.map((spot) => (
             <button
               key={spot.municipalityId}
+              type="button"
               className={styles.item}
-              onClick={() => onSelectSpot(spot.lat, spot.lon)}
+              onClick={() => {
+                onSelectSpot(spot.lat, spot.lon)
+                if (!isDesktop()) setExpanded(false)   // на телефоне и планшете — освободить карту
+              }}
             >
               <SpotBody spot={spot} />
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Мобильный - сворачиваемая плашка */}
-      <div className={styles.containerMobile}>
-        <button
-          className={styles.mobileToggle}
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          Белые пятна ({spots.length})
-        </button>
-        {isExpanded && (
-          <div className={styles.mobileList}>
-            {spots.map((spot) => (
-              <button
-                key={spot.municipalityId}
-                className={styles.item}
-                onClick={() => {
-                  onSelectSpot(spot.lat, spot.lon)
-                  setIsExpanded(false)
-                }}
-              >
-                <SpotBody spot={spot} />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   )
 }
 

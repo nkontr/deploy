@@ -1,35 +1,59 @@
-/* Десктоп - на месте легенды (слева внизу) */
-.containerDesktop {
+/* Одна панель на всех экранах: заголовок сворачивает список.
+   Десктоп — карточка слева внизу (на месте легенды), раскрыта;
+   планшет и телефон — плашка слева внизу на одной линии с кнопкой «Фильтры», список выезжает вверх. */
+.container {
   position: absolute;
   bottom: var(--spacing-lg);
   left: var(--spacing-lg);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  max-height: calc(100% - 2 * var(--spacing-lg) - 56px);   /* не выше карты и кнопок слоёв */
   background: var(--rt-white);
   border: 1px solid var(--rt-orange);
   border-radius: 12px;
-  padding: 12px;
-  min-width: 220px;
-  max-width: 300px;
-  max-height: 400px;
-  overflow-y: auto;
   box-shadow: var(--shadow-lg);
-  z-index: 10;
 }
 
-.containerMobile {
-  display: none;
+.container:not(.expanded) {
+  width: auto;
 }
 
-.title {
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  background: none;
+  border: none;
+  font: inherit;
   font-size: 14px;
   font-weight: 600;
   color: var(--rt-black);
-  margin: 0 0 12px 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.container:not(.expanded) .header {
+  background: var(--rt-orange);
+  color: var(--rt-white);
+  border-radius: 11px;
+}
+
+.chevron {
+  font-size: 12px;
 }
 
 .list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .item {
@@ -40,6 +64,7 @@
   text-align: left;
   cursor: pointer;
   transition: all 0.2s;
+  min-height: 44px;
 }
 
 .item:hover {
@@ -77,53 +102,25 @@
   line-height: 1.3;
 }
 
-/* Мобильный - сворачиваемая плашка */
+/* Планшет и телефон: плашка на линии кнопки «Фильтры» (она справа внизу, bottom 16px) */
+@media (max-width: 1279px) {
+  .container {
+    left: 12px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    max-height: 55%;
+  }
+}
+
+/* Телефон: раскрытый список — на всю ширину, поверх кнопки «Фильтры» */
 @media (max-width: 767px) {
-  .containerDesktop {
-    display: none;
+  .container.expanded {
+    right: 12px;
+    width: auto;
+    z-index: 150;
   }
 
-  .containerMobile {
-    display: block;
-    position: absolute;
-    bottom: calc(120px + env(safe-area-inset-bottom, 0px));
-    left: 10px;
-    right: 10px;
-    z-index: 10;
-  }
-
-  .mobileToggle {
-    width: 100%;
-    padding: 14px 16px;
-    background: var(--rt-orange);
-    color: var(--rt-white);
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  .header {
     min-height: 48px;
-  }
-
-  .mobileList {
-    margin-top: 8px;
-    background: var(--rt-white);
-    border: 1px solid var(--rt-orange);
-    border-radius: 12px;
-    padding: 12px;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .item {
-    min-height: 44px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    font-size: 15px;
   }
 }

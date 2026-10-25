@@ -47,6 +47,13 @@
   padding: 8px;
 }
 
+/* Планшет и телефон: внизу — плавающая кнопка «Фильтры», последний проект не должен оказаться под ней */
+@media (max-width: 1279px) {
+  .list {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .row {
   padding: 16px;
   margin-bottom: 8px;

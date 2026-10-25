@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* мобильный Safari: 100vh выше видимой части, низ уезжал под панель браузера */
   background: var(--rt-white);
 }
 
@@ -179,13 +180,24 @@
     flex: 1;
   }
 
-  .timelineContainer {
-    flex-shrink: 0;
-  }
-
   .contentContainer {
     flex: 1;
     position: relative;
+  }
+
+  /* Таймлайн — своя вкладка: раньше он стоял над картой и списком и занимал пол-экрана */
+  .timelineContainer {
+    display: none;
+  }
+
+  .timelineContainer.active {
+    display: block;
+    flex: 1;
+    overflow: auto;
+  }
+
+  .contentContainer.hidden {
+    display: none;
   }
 
   /* На мобайле карта и список не бок о бок, а переключаются вкладками */

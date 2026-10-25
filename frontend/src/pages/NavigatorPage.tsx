@@ -23,7 +23,8 @@ export function NavigatorPage() {
   const { filters, updateFilters, resetFilters } = useProjectFilter()
   const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>()
   const [sort, setSort] = useState<`${ProjectSortField},${ProjectSortDirection}`>('amountMln,desc')
-  const [activeTab, setActiveTab] = useState<'map' | 'list'>('map')
+  // На телефоне таймлайн, карта и список — отдельные вкладки на весь экран (на планшете и десктопе — все сразу)
+  const [activeTab, setActiveTab] = useState<'timeline' | 'map' | 'list'>('map')
   // < 1280: фильтры не колонкой, а выезжающей панелью (ТЗ 11, раздел 3)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const queryString = projectFilterToQuery(filters)
@@ -80,11 +81,12 @@ export function NavigatorPage() {
       <div className={styles.mobileTabs}>
         <Tabs
           tabs={[
+            { id: 'timeline', label: 'Таймлайн' },
             { id: 'map', label: 'Карта' },
             { id: 'list', label: 'Список' },
           ]}
           activeTab={activeTab}
-          onChange={(tab) => setActiveTab(tab as 'map' | 'list')}
+          onChange={(tab) => setActiveTab(tab as 'timeline' | 'map' | 'list')}
         />
       </div>
 
@@ -116,7 +118,7 @@ export function NavigatorPage() {
         </button>
 
         <div className={styles.rightPanel}>
-          <div className={styles.timelineContainer}>
+          <div className={`${styles.timelineContainer} ${activeTab === 'timeline' ? styles.active : ''}`}>
             <ProjectTimeline
               filters={filters}
               onSelectProject={setSelectedProjectId}
@@ -124,7 +126,7 @@ export function NavigatorPage() {
             />
           </div>
 
-          <div className={styles.contentContainer}>
+          <div className={`${styles.contentContainer} ${activeTab === 'timeline' ? styles.hidden : ''}`}>
             {/* Десктоп: карта и список бок о бок */}
             <div className={`${styles.mapContainer} ${activeTab === 'map' ? styles.active : ''}`}>
               <ProjectMap
