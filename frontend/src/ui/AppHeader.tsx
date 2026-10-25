@@ -15,7 +15,8 @@ export function AppHeader({ userName, onLogout }: AppHeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.headerTop}>
-        <div className={styles.logo}>Ростелеком</div>
+        {/* Монохромный логотип из гайдлайна, белый на фиолетовой шапке (public/rt-logo-white.png) */}
+        <img className={styles.logo} src="/rt-logo-white.png" alt="Ростелеком" />
         <nav className={styles.nav}>
           <Link
             to="/"

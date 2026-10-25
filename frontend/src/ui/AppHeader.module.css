@@ -11,9 +11,16 @@
 }
 
 .logo {
-  font-weight: 700;
-  font-size: 18px;
-  white-space: nowrap;
+  display: block;
+  height: 28px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .logo {
+    height: 22px;
+  }
 }
 
 .nav {

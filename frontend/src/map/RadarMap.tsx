@@ -9,6 +9,7 @@ import type { CompanyFilters } from '../filters/types'
 import { createClusterMarker } from './clusterMarker'
 import { createGroupMarker, groupTooltip, offscreenMunicipality } from './groupMarker'
 import { getDictionaries } from '../api/endpoints'
+import { clampDeg } from './bounds'
 import { attachBasemapFallback, createBaseStyle } from './basemap'
 import { potentialTooltip } from './potentialTooltip'
 import { HEAT_MAX_ZOOM, cellsToHeatGeoJson, heatGridZoom, heatLayout, heatPaint } from './heatmap'
@@ -59,6 +60,8 @@ function relocationGeoJson(line: RelocationLine | null | undefined) {
 
 const ROSTOV_CENTER: [number, number] = [40.8, 47.6] // [lon, lat] для MapLibre
 const INITIAL_ZOOM = 7
+/** Дальше отдалять незачем: карта про Ростовскую область, а окно на весь мир ломало фильтр по границам */
+const MIN_ZOOM = 4
 /** Как MapController.STREET_ZOOM в core-api: с него компании без адреса — группами, а не кластерами */
 const STREET_ZOOM = 13
 
@@ -117,6 +120,7 @@ export function RadarMap({
       style: createBaseStyle(),
       center: ROSTOV_CENTER,
       zoom: INITIAL_ZOOM,
+      minZoom: MIN_ZOOM,
       // Явно включаем интерактивность
       scrollZoom: true,
       dragPan: true,
@@ -160,10 +164,11 @@ export function RadarMap({
 
         const bounds = mapInstance.getBounds()
         const newBounds = {
-          minLat: parseFloat(bounds.getSouth().toFixed(4)),
-          maxLat: parseFloat(bounds.getNorth().toFixed(4)),
-          minLon: parseFloat(bounds.getWest().toFixed(4)),
-          maxLon: parseFloat(bounds.getEast().toFixed(4)),
+          // На мелком масштабе окно шире 360° — API принимает только -180..180 / -90..90
+          minLat: clampDeg(bounds.getSouth(), 90),
+          maxLat: clampDeg(bounds.getNorth(), 90),
+          minLon: clampDeg(bounds.getWest(), 180),
+          maxLon: clampDeg(bounds.getEast(), 180),
         }
 
         // Сериализуем bbox для сравнения

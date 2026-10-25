@@ -12,8 +12,9 @@
   display: flex;
   justify-content: center;
   padding: 0 16px 12px;
-  max-width: 1800px;
-  margin: 0 auto;
+  /* На всю ширину, как шапка: иначе по бокам переключателя белые поля */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Mobile */

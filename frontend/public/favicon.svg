@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Знак продукта «Радар» без текста (гайдлайн: favicon — только знак). Заменить на знак РТ, когда куратор даст SVG -->
-  <rect width="64" height="64" rx="16" fill="#7700FF"/>
-  <circle cx="32" cy="32" r="20" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.55"/>
-  <circle cx="32" cy="32" r="10" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.8"/>
-  <path d="M32 32 L49 21" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="45" cy="24" r="5" fill="#FF4F12"/>
-</svg>
